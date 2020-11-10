@@ -1,7 +1,9 @@
 {% extends 'base.html' %}
 {% block content %}
 <div class="container">
-    <h1><상세보기 페이지></h1>
+    <h1>
+        <상세보기 페이지>
+    </h1>
     <br>
     <h3>글 제목 : {{ post.title }} </h3><br>
     <h3>글 내용 : {{ post.content }} </h3><br>
@@ -9,20 +11,84 @@
     <h4>조회 수: {{ post.view_count }} </h4><br>
 
     {% if post.user %}
-        <h3> 작성자 : {{ post.user }}</h3>
+    <h3> 작성자 : {{ post.user }}</h3>
     {% else %}
-        <h3> 작성자 : 알수 없음</h3>
+    <h3> 작성자 : 알수 없음</h3>
     {% endif %}
 
     {% if post.image %}
-        <img src="{{ post.image.url }}" width="500px" height="500px">
+    <img src="{{ post.image.url }}" width="500px" height="500px">
     {% endif %}
     <br>
 
     {% if post.user == user %}
-        <a href="{% url 'items:delete' post.pk %}"> 삭제하기 </a>
+    <a href="{% url 'items:delete' post.pk %}"> 삭제하기 </a>
     {% endif %}
+    <span href="#" class="like" name="{{post.id}}" value="Like">
+
+        {% if user in post.like_user_set.all %}
+        <div class="alt-service-icon">
+            <i class="fas fa-heart" id="like-icon" style="color:red;"></i>
+        </div>
+
+        {% else %}
+
+        <div class="alt-service-icon">
+            <i class="far fa-heart" id="like-icon" style="color:red;"></i>
+        </div>
+
+        {% endif %}
+
+        <span id="count-{{ post.id }}" class="alt-services-title font-alt">
+            좋아요
+            {% if post.likes_count == 0 %}
+            0개
+            {% else %}
+            {{ post.like_count }}개
+            {% endif %}
+        </span>
+    </span>
+
+
 </div>
-    
+<script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+<script>
+    $(".like").click(function () {
+        var pk = $(this).attr('name')
+        $.ajax({
+            type: "POST",
+            url: "{% url 'items:like_toggle' post.pk %}",
+            data: { 'pk': pk, 'csrfmiddlewaretoken': '{{ csrf_token }}' },
+            dataType: "json",
+            success: function (response) {
+                if (response.like_count == null) {
+                    alert("로그인이 필요합니다.");
+                    window.location.replace("/accounts/login/");
+                }
+                else {
+                    if (response.result == "like") {
+                        $('#like-icon').removeClass();
+                        $('#like-icon').addClass('fas fa-heart');
+                    }
+                    else {
+                        $('#like-icon').removeClass();
+                        $('#like-icon').addClass('far fa-heart');
+                    }
+                    $('#count-{{ post.id }}').html('좋아요' + response.like_count + '개');
+                }
+            },
+
+            error: function (request, status, error) {
+                alert("로그인이 필요합니다.") // +"\n"+"error:"+error) 
+                // window.location.replace("/accounts/login/") 
+                alert("code:" + request.status + "\n" + "message:" + request.responseText + "\n" + "error:" + error);
+            },
+        });
+    })
+</script>
+
+
+
+
 
 {% endblock %}
